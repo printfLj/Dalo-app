@@ -22,7 +22,7 @@ Do not allow public sign-up to grant facilitator privileges. Every verified acco
 
 ## UI direction
 
-Create a minimalist black-and-white interface with a sketch/drawing feel: mostly white surfaces, black text and ink-like outlines, restrained gray secondary text, generous whitespace, and a few hand-drawn accents. Keep the design coherent and usable rather than making the entire UI look rough. Maintain strong contrast, readable text, clear labels, and large tap targets. Keep QR codes and functional controls crisp, high contrast, and free of sketch decorations.
+Give Daló a polished, modern campus-event identity inspired by the clarity and event-first presentation of apps such as Luma. Do not copy Luma's logo, assets, or exact layouts. Use a warm off-white canvas, white surfaces, near-black typography, soft gray details, and restrained coral/terracotta accents. Use a clean sans-serif font and an editorial type hierarchy; do not use handwriting or sketch styling. Make event discovery inviting with tasteful event-cover treatments, clear date/location details, rounded cards, calm spacing, and direct calls to action. Keep the visual system cohesive across sign-in, event details, tickets, hosting, and check-in. Maintain strong contrast, readable type, explicit labels, and large tap targets. Keep QR codes crisp, high contrast, and unobstructed; the camera scanner may use a dark immersive view for scan clarity.
 
 ## Delivery
 

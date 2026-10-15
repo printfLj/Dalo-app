@@ -10,7 +10,9 @@ class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  Stream<User?> get authStateChanges => _auth.authStateChanges();
+  /// Includes sign-in/out and user reload/profile updates, so the root gate
+  /// reacts immediately when Firebase finishes a login.
+  Stream<User?> get authStateChanges => _auth.userChanges();
 
   User? get currentUser => _auth.currentUser;
 
@@ -74,8 +76,11 @@ class AuthService {
       email: trimmedEmail,
       password: password,
     );
-    if (credential.user?.emailVerified != true) {
-      await credential.user?.sendEmailVerification();
+    final signedInUser = credential.user;
+    await signedInUser?.reload();
+    final refreshedUser = _auth.currentUser;
+    if (refreshedUser?.emailVerified != true) {
+      await refreshedUser?.sendEmailVerification();
       await _auth.signOut();
       throw Exception('email-not-verified');
     }
@@ -94,14 +99,9 @@ class AuthService {
     return AppUser.fromDoc(doc);
   }
 
-  Stream<AppUser?> currentAppUserStream() {
-    return _auth.authStateChanges().asyncExpand((user) {
-      if (user == null) return Stream.value(null);
-      return _db
-          .collection('users')
-          .doc(user.uid)
-          .snapshots()
-          .map((doc) => doc.exists ? AppUser.fromDoc(doc) : null);
-    });
-  }
+  Stream<AppUser?> appUserStream(String uid) => _db
+      .collection('users')
+      .doc(uid)
+      .snapshots()
+      .map((doc) => doc.exists ? AppUser.fromDoc(doc) : null);
 }

@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import '../theme/dalo_theme.dart';
 
-/// Ink-outline style card. Used throughout the app for the sketch aesthetic.
-class SketchCard extends StatelessWidget {
+/// Rounded, quiet surface used for event and attendee content.
+class AppCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
   final VoidCallback? onTap;
 
-  const SketchCard({
+  const AppCard({
     super.key,
     required this.child,
     this.padding,
@@ -16,16 +17,23 @@ class SketchCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(6),
+      color: DaloPalette.surface,
+      borderRadius: BorderRadius.circular(20),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(20),
         child: Container(
           padding: padding ?? const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: const Color(0xFFCCCCCC), width: 1.5),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: DaloPalette.outline),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x08000000),
+                blurRadius: 18,
+                offset: Offset(0, 6),
+              ),
+            ],
           ),
           child: child,
         ),
@@ -134,7 +142,7 @@ class LoadingView extends StatelessWidget {
             height: 32,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              color: Color(0xFF111111),
+              color: DaloPalette.accent,
             ),
           ),
           if (message != null) ...[
@@ -171,12 +179,12 @@ class EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 56, color: const Color(0xFFCCCCCC)),
+            Icon(icon, size: 56, color: DaloPalette.accent.withOpacity(0.65)),
             const SizedBox(height: 16),
             Text(
               message,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFF888888),
+                    color: DaloPalette.muted,
                   ),
               textAlign: TextAlign.center,
             ),
@@ -202,19 +210,19 @@ class ErrorBanner extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF3F3),
-        border: Border.all(color: Colors.red.shade200, width: 1.5),
-        borderRadius: BorderRadius.circular(4),
+        color: const Color(0xFFFFF1EF),
+        border: Border.all(color: const Color(0xFFF3C2B8)),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
         children: [
-          Icon(Icons.error_outline, color: Colors.red.shade700, size: 18),
+          const Icon(Icons.error_outline, color: Color(0xFFB42318), size: 18),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               message,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.red.shade700,
+                    color: const Color(0xFFB42318),
                     fontSize: 13,
                   ),
             ),
@@ -240,26 +248,26 @@ class StatusBadge extends StatelessWidget {
 
   const StatusBadge.open({super.key})
       : label = 'Open',
-        color = const Color(0xFF111111),
-        textColor = Colors.white;
+        color = DaloPalette.accentSoft,
+        textColor = DaloPalette.accent;
 
   const StatusBadge.full({super.key})
       : label = 'Full',
-        color = const Color(0xFFEEEEEE),
-        textColor = const Color(0xFF555555);
+        color = const Color(0xFFF0EEEA),
+        textColor = DaloPalette.muted;
 
   const StatusBadge.checkedIn({super.key})
       : label = 'Checked In',
-        color = const Color(0xFFD4EDDA),
-        textColor = const Color(0xFF155724);
+        color = DaloPalette.successSoft,
+        textColor = DaloPalette.success;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(99),
       ),
       child: Text(
         label,

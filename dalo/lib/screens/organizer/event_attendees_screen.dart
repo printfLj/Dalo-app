@@ -65,7 +65,7 @@ class _EventAttendeesScreenState extends State<EventAttendeesScreen> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: SketchCard(
+                      child: AppCard(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 12),
                         child: Row(
@@ -83,7 +83,7 @@ class _EventAttendeesScreenState extends State<EventAttendeesScreen> {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: SketchCard(
+                      child: AppCard(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 12),
                         child: Column(
@@ -164,7 +164,7 @@ class _AttendeeRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
-    return SketchCard(
+    return AppCard(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [

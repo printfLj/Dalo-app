@@ -31,15 +31,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _signIn() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       await _auth.signIn(
         email: _emailCtrl.text,
         password: _passCtrl.text,
       );
-      // AuthGate will redirect automatically
     } catch (e) {
-      setState(() => _error = _friendlyError(e.toString()));
+      if (mounted) setState(() => _error = _friendlyError(e.toString()));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -49,7 +51,9 @@ class _LoginScreenState extends State<LoginScreen> {
     if (raw.contains('email-not-verified')) {
       return 'Verify your email first. We sent you another verification link.';
     }
-    if (raw.contains('invalid-credential') || raw.contains('wrong-password') || raw.contains('user-not-found')) {
+    if (raw.contains('invalid-credential') ||
+        raw.contains('wrong-password') ||
+        raw.contains('user-not-found')) {
       return 'Incorrect email or password.';
     }
     if (raw.contains('too-many-requests')) {
@@ -67,29 +71,69 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 48),
+          padding: const EdgeInsets.fromLTRB(24, 22, 24, 32),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Daló', style: tt.displayMedium),
-                const SizedBox(height: 4),
-                Text(
-                  'Event registration & attendance',
-                  style: tt.bodySmall,
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(22),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFE9E1),
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('daló', style: tt.headlineLarge),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Find your people.\nShow up for what matters.',
+                              style: tt.bodyMedium?.copyWith(height: 1.35),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        width: 58,
+                        height: 58,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.75),
+                          borderRadius: BorderRadius.circular(19),
+                        ),
+                        child: const Icon(
+                          Icons.local_activity_outlined,
+                          size: 29,
+                          color: Color(0xFFE86B4A),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 48),
-                Text('Sign in', style: tt.headlineLarge),
-                const SizedBox(height: 24),
+                const SizedBox(height: 34),
+                Text('Welcome back', style: tt.displayMedium),
+                const SizedBox(height: 8),
+                Text('Sign in with your student email to explore events.',
+                    style: tt.bodyMedium
+                        ?.copyWith(color: const Color(0xFF77736E))),
+                const SizedBox(height: 26),
                 TextFormField(
                   controller: _emailCtrl,
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
                   autocorrect: false,
-                  decoration: const InputDecoration(labelText: 'Email'),
+                  decoration: const InputDecoration(
+                    labelText: 'Student email',
+                    prefixIcon: Icon(Icons.mail_outline_rounded),
+                  ),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Enter your email.';
+                    if (v == null || v.trim().isEmpty)
+                      return 'Enter your email.';
                     if (!v.contains('@')) return 'Enter a valid email.';
                     return null;
                   },
@@ -102,8 +146,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   onFieldSubmitted: (_) => _signIn(),
                   decoration: InputDecoration(
                     labelText: 'Password',
+                    prefixIcon: const Icon(Icons.lock_outline_rounded),
                     suffixIcon: IconButton(
-                      icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
+                      icon: Icon(
+                          _obscure ? Icons.visibility_off : Icons.visibility),
                       onPressed: () => setState(() => _obscure = !_obscure),
                     ),
                   ),
@@ -118,7 +164,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: TextButton(
                     onPressed: () => Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
+                      MaterialPageRoute(
+                          builder: (_) => const ForgotPasswordScreen()),
                     ),
                     child: const Text('Forgot password?'),
                   ),
@@ -141,7 +188,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextButton(
                       onPressed: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                        MaterialPageRoute(
+                            builder: (_) => const RegisterScreen()),
                       ),
                       child: const Text('Sign up'),
                     ),

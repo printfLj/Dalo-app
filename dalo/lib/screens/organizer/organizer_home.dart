@@ -69,7 +69,7 @@ class OrganizerHome extends StatelessWidget {
             separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemBuilder: (context, i) {
               final event = events[i];
-              return SketchCard(
+              return AppCard(
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(

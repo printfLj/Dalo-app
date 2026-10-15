@@ -132,7 +132,7 @@ class _AttendeeRowState extends State<_AttendeeRow> {
     final reg = widget.reg;
     final tt = Theme.of(context).textTheme;
 
-    return SketchCard(
+    return AppCard(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [

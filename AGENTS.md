@@ -21,9 +21,10 @@ Build **Daló**, a straightforward Flutter Android app for university event regi
 - Registration emails containing event details and the QR code are pending in the strict zero-budget Spark version because they need a trusted mail backend/provider. Never put mail-provider secrets in the APK. Keep Firebase Auth's email-verification message distinct from registration confirmation.
 
 ## Visual direction
-- Use a minimalist black-and-white visual system with a hand-drawn sketch or ink-outline character: white backgrounds, black text and linework, restrained gray for secondary information, and generous spacing.
-- Use sketch-like outlines and small hand-drawn accents consistently, while keeping controls, text, QR codes, and status indicators crisp and easy to read. Avoid clutter, heavy textures, and decorative elements that reduce legibility.
-- Keep accessibility in view: clear contrast, readable type, large tap targets, and explicit labels. The QR itself must remain high contrast and unobstructed.
+- Give Daló a polished, modern campus-event identity inspired by the clarity and event-first presentation of apps such as Luma. Do not copy Luma's logo, assets, or exact layouts.
+- Use a warm off-white canvas, white surfaces, near-black typography, soft gray details, and a restrained coral/terracotta accent. Use a clean sans-serif font and an editorial type hierarchy; do not use handwriting or sketch styling.
+- Make event discovery image-like and inviting with tasteful event cover treatments, clear date/location details, rounded cards, calm spacing, and direct calls to action. Keep the UI cohesive across sign-in, event details, tickets, hosting, and check-in.
+- Keep accessibility in view: strong contrast, readable type, large tap targets, explicit labels, and clear success/error states. QR codes must remain high contrast and unobstructed. The camera scanner may use a dark immersive view for scan clarity.
 
 ## Implementation guidance
 - The project has a strict zero-budget constraint: use Firebase Spark with Flutter/Dart, Firebase Authentication, and Cloud Firestore; do not enable billing or deploy Cloud Functions. Use Firestore client transactions guarded by strict Firestore Security Rules (`getAfter`) for capacity checks, QR validation, and one-time check-in. Explain that this college-project client-based design is less resistant to modified clients than a trusted backend.

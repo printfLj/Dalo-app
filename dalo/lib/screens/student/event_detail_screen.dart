@@ -99,7 +99,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           children: [
             Text(event.title, style: tt.headlineLarge),
             const SizedBox(height: 20),
-            SketchCard(
+            AppCard(
               child: Column(
                 children: [
                   _DetailRow(

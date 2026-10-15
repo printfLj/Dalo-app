@@ -138,3 +138,16 @@ All files under `dalo/`, `functions/`, `firestore.rules`, `firestore.indexes.jso
 - Changed the owner management screen to listen to the event document so attendee count and Open/Full status refresh immediately after another account registers. Updated registration service comments to reflect that all verified account roles can join events.
 - Files: `dalo/lib/screens/organizer/event_attendees_screen.dart`, `dalo/lib/services/registration_service.dart`, `docs/CHANGELOG.md`.
 - Verification: `dart analyze` passed with no issues; `flutter build apk --debug` succeeded. Physical-device rendering and live count refresh not checked.
+
+## 2026-10-16 — Modern event UI and login routing recovery
+
+- Replaced the hand-drawn sketch theme with a warm, polished event-discovery design using rounded surfaces, a coral accent, updated typography, and redesigned discovery/hosting navigation and event cards.
+- Reworked the auth gate to keep Firebase auth state and the user profile stream separate, wait while profiles load, and show a useful recovery state instead of silently rendering login when a signed-in profile read fails. Sign-in refreshes the Firebase user before checking email verification.
+- Files: `dalo/lib/core/theme/dalo_theme.dart`, `dalo/lib/app.dart`, `dalo/lib/core/widgets/common_widgets.dart`, `dalo/lib/core/auth/auth_gate.dart`, `dalo/lib/services/auth_service.dart`, `dalo/lib/screens/auth/login_screen.dart`, `dalo/lib/screens/student/student_home.dart`, shared-card call sites in attendee and event screens, `dalo/pubspec.yaml`, `AGENTS.md`, `ANTIGRAVITY_PROMPT.md`, `docs/CHANGELOG.md`.
+- Verification: `flutter analyze` passed with no issues and `flutter build apk --debug` succeeded. Physical sign-in and post-login routing are not checked because no Android device/emulator is connected.
+# 2026-10-16 — Instructor project guide
+
+- Created a concise, presentation-ready PDF explaining Daló's student and organizer workflows, QR attendance design, Firebase/security model, verification limits, demo sequence, and project file map.
+- Files: `output/pdf/Dalo_Project_Guide.pdf`, `docs/CHANGELOG.md`.
+- Verification: rendered all six PDF pages to PNG and visually inspected the page layouts; confirmed the PDF contains six A4 pages and extracted text from all pages. App code was not changed.
+

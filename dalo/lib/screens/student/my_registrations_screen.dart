@@ -46,7 +46,7 @@ class MyRegistrationsScreen extends StatelessWidget {
               builder: (context, eventSnap) {
                 final event = eventSnap.data;
                 final tt = Theme.of(context).textTheme;
-                return SketchCard(
+                return AppCard(
                   onTap: event == null
                       ? null
                       : () => Navigator.push(
