@@ -1,0 +1,189 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function institutionEmail(email) {
+      return email is string
+        && email.matches('(?i)^[^@]+@(udd\\.edu\\.ph|cdd\\.edu\\.ph)$');
+    }
+
+    function hasVerifiedInstitutionEmail() {
+      return isSignedIn()
+        && request.auth.token.email_verified == true
+        && institutionEmail(request.auth.token.email);
+    }
+
+    function userPath(uid) {
+      return /databases/$(database)/documents/users/$(uid);
+    }
+
+    function getUserRole() {
+      return get(userPath(request.auth.uid)).data.role;
+    }
+
+    function isStudent() {
+      return isSignedIn() && getUserRole() == 'student';
+    }
+
+    function isOrganizer() {
+      return isSignedIn() && getUserRole() == 'organizer';
+    }
+
+    function isFacilitator() {
+      return isSignedIn() && getUserRole() == 'facilitator';
+    }
+
+    function isOrganizerOrFacilitator() {
+      return isOrganizer() || isFacilitator();
+    }
+
+    function ownsEvent(eventId) {
+      let eventPath = /databases/$(database)/documents/events/$(eventId);
+      return isSignedIn()
+        && exists(eventPath)
+        && get(eventPath).data.organizerUid == request.auth.uid;
+    }
+
+    function canManageEvent(eventId) {
+      return isFacilitator() || ownsEvent(eventId);
+    }
+
+    function registrationPath(eventId, uid) {
+      return /databases/$(database)/documents/registrations/$(eventId + '_' + uid);
+    }
+
+    function isRegistrationIdForCaller(regId) {
+      // Registration IDs use {eventId}_{uid}; this also permits a user to
+      // check their registration before that document has been created.
+      return isSignedIn() && regId.matches('^.+_' + request.auth.uid + '$');
+    }
+
+    function isValidEventCountIncrement(eventId) {
+      let path = /databases/$(database)/documents/events/$(eventId);
+      let regPath = registrationPath(eventId, request.auth.uid);
+      let before = get(path).data;
+      let after = getAfter(path).data;
+      let newRegistration = getAfter(regPath).data;
+      return hasVerifiedInstitutionEmail()
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['registeredCount'])
+        && request.resource.data.registeredCount == resource.data.registeredCount + 1
+        && resource.data.registeredCount < resource.data.capacity
+        && !exists(regPath)
+        && existsAfter(regPath)
+        && before.registeredCount < before.capacity
+        && after.registeredCount == before.registeredCount + 1
+        && after.capacity == before.capacity
+        && newRegistration.eventId == eventId
+        && newRegistration.studentUid == request.auth.uid
+        && newRegistration.registeredAt == request.time;
+    }
+
+    function isValidRegistrationCreate(regId) {
+      let eventId = request.resource.data.eventId;
+      let eventPath = /databases/$(database)/documents/events/$(eventId);
+      let before = get(eventPath).data;
+      let after = getAfter(eventPath).data;
+      let student = get(userPath(request.auth.uid)).data;
+      return hasVerifiedInstitutionEmail()
+        && regId == eventId + '_' + request.auth.uid
+        && request.resource.data.keys().hasAll([
+          'eventId', 'studentUid', 'studentName', 'studentEmail', 'qrToken',
+          'status', 'registeredAt', 'checkedInAt'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'eventId', 'studentUid', 'studentName', 'studentEmail', 'qrToken',
+          'status', 'registeredAt', 'checkedInAt'
+        ])
+        && request.resource.data.studentUid == request.auth.uid
+        && request.resource.data.studentName == student.displayName
+        && request.resource.data.studentEmail == request.auth.token.email
+        && request.resource.data.qrToken is string
+        && request.resource.data.qrToken.matches('^[A-Za-z0-9_-]{43}$')
+        && request.resource.data.status == 'registered'
+        && request.resource.data.registeredAt == request.time
+        && request.resource.data.checkedInAt == null
+        && before.registeredCount < before.capacity
+        && after.registeredCount == before.registeredCount + 1
+        && after.capacity == before.capacity;
+    }
+
+    match /users/{uid} {
+      allow read: if isSignedIn()
+        && (request.auth.uid == uid || isOrganizerOrFacilitator());
+
+      // Public registration may create only a student profile for its own
+      // institutional account. Email verification is required for app access.
+      allow create: if isSignedIn()
+        && request.auth.uid == uid
+        && request.resource.data.role == 'student'
+        && request.resource.data.email == request.auth.token.email
+        && institutionEmail(request.resource.data.email)
+        && request.resource.data.keys().hasAll(['email', 'displayName', 'role', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['email', 'displayName', 'role', 'createdAt']);
+
+      allow update: if request.auth.uid == uid
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName']);
+      allow delete: if false;
+    }
+
+    match /events/{eventId} {
+      allow read: if isSignedIn();
+
+      allow create: if hasVerifiedInstitutionEmail()
+        && request.resource.data.organizerUid == request.auth.uid
+        && request.resource.data.registeredCount == 0
+        && request.resource.data.capacity is int
+        && request.resource.data.capacity > 0
+        && request.resource.data.keys().hasAll([
+          'title', 'date', 'time', 'location', 'capacity', 'registeredCount',
+          'organizerUid', 'organizerName', 'createdAt'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'title', 'date', 'time', 'location', 'capacity', 'registeredCount',
+          'organizerUid', 'organizerName', 'createdAt'
+        ]);
+
+      allow update: if hasVerifiedInstitutionEmail()
+        && ((ownsEvent(eventId)
+            && request.resource.data.organizerUid == resource.data.organizerUid
+            && request.resource.data.registeredCount == resource.data.registeredCount
+            && request.resource.data.capacity >= resource.data.registeredCount
+            && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['title', 'date', 'time', 'location', 'capacity']))
+          || isValidEventCountIncrement(eventId));
+      allow delete: if false;
+    }
+
+    match /registrations/{regId} {
+      allow read: if isSignedIn() && (
+        isRegistrationIdForCaller(regId)
+        || resource.data.studentUid == request.auth.uid
+        || canManageEvent(resource.data.eventId)
+      );
+
+      // A registration and event counter must be committed together by the
+      // student's Firestore transaction. This preserves capacity on Spark.
+      allow create: if isValidRegistrationCreate(regId);
+
+      // Only the event owner or an authorized facilitator can check in once.
+      allow update: if hasVerifiedInstitutionEmail()
+        && canManageEvent(resource.data.eventId)
+        && request.resource.data.eventId == resource.data.eventId
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'checkedInAt'])
+        && resource.data.status == 'registered'
+        && resource.data.checkedInAt == null
+        && request.resource.data.status == 'checkedIn'
+        && request.resource.data.checkedInAt == request.time;
+
+      allow delete: if false;
+    }
+  }
+}

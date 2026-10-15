@@ -1,0 +1,140 @@
+# Daló project change log
+
+Append a dated entry for each feature, fix, revision, or project-file change. Include a concise summary, affected files, and verification performed (or “not checked”). Preserve prior entries; add a correction as a new entry.
+
+## 2026-10-15 — Let users create and manage their own events
+
+- Added a New event action and My events tab to the shared home. All account roles can browse/join events; event creators can view/manage their attendee list and use QR or manual check-in.
+- Updated Firestore rules so any verified institutional account may create/register for events, while owner access is limited to events they created; optional facilitators retain cross-event check-in. QR lookup now includes the current event ID to align with owner-scoped rules.
+- Updated project instructions, Antigravity prompt, README, and review handoff to reflect event ownership and the required Firestore rules redeployment.
+- Files: `dalo/lib/core/auth/auth_gate.dart`, `dalo/lib/screens/student/student_home.dart`, `dalo/lib/screens/organizer/event_attendees_screen.dart`, `dalo/lib/services/event_service.dart`, `dalo/lib/services/registration_service.dart`, `firestore.rules`, `AGENTS.md`, `ANTIGRAVITY_PROMPT.md`, `README.md`, `docs/REVIEW_HANDOFF.md`, `docs/CHANGELOG.md`.
+- Verification: `dart analyze` passed with no issues; `flutter build apk --debug` succeeded. Firestore rules have not been deployed or runtime-tested; physical-device smoke test not checked.
+
+## 2026-10-15 — Project brief and implementation workflow
+
+- Added the project instruction file and Antigravity implementation prompt for the Flutter event registration and QR attendance app.
+- Updated the implementation workflow to read the preliminary Markdown project notes before every coding task and to record all changes here.
+- Added the minimalist white-and-black sketch/drawing UI direction and clarified that scanning must use the camera inside the Flutter app.
+- Files: `AGENTS.md`, `ANTIGRAVITY_PROMPT.md`, `docs/CHANGELOG.md`.
+- Verification: reviewed the Markdown files for consistent requirements; Flutter build not run because this workspace contains no Flutter application yet.
+
+## 2026-10-15 — Full initial Flutter app implementation
+
+### Summary
+Implemented the complete Daló Flutter Android app from scratch. No prior Flutter project existed in the repository.
+
+### What was built
+
+**Flutter app (dalo/)**
+- `pubspec.yaml` — all dependencies: firebase_core, firebase_auth, cloud_firestore, firebase_functions, qr_flutter, mobile_scanner, uuid, share_plus, path_provider, google_fonts, intl
+- `lib/main.dart` — app entry, Firebase init, portrait lock
+- `lib/app.dart` — minimalist black-and-white sketch theme (Caveat headings, Inter body)
+- `lib/firebase_options.dart` — placeholder to be replaced by `flutterfire configure`
+- `lib/models/` — AppUser (with UserRole enum), Event, Registration models
+- `lib/services/auth_service.dart` — sign-up (always student), sign-in, password reset; configurable domain restriction via `kAllowedEmailDomain`
+- `lib/services/event_service.dart` — CRUD and Firestore streams for events
+- `lib/services/registration_service.dart` — delegates registration/check-in to Cloud Functions for atomicity
+- `lib/core/auth/auth_gate.dart` — role-based routing (student/organizer/facilitator)
+- `lib/core/widgets/common_widgets.dart` — SketchCard, PrimaryButton, SecondaryButton, LoadingView, EmptyState, ErrorBanner, StatusBadge
+- Auth screens: LoginScreen, RegisterScreen, ForgotPasswordScreen
+- Student screens: StudentHome (events + my-tickets tabs), EventDetailScreen, QrTicketScreen (QR display + share), MyRegistrationsScreen
+- Organizer screens: OrganizerHome, CreateEventScreen, EventAttendeesScreen
+- Facilitator screens: FacilitatorHome, ScannerScreen (mobile_scanner, camera permissions, success/error overlays, haptic), ManualCheckinScreen (search + tap-to-check-in)
+- `android/app/src/main/AndroidManifest.xml` — CAMERA, INTERNET, WRITE_EXTERNAL_STORAGE permissions
+- `android/app/src/main/kotlin/com/dalo/app/MainActivity.kt`
+- `android/build.gradle`, `android/app/build.gradle`, `android/settings.gradle`, `android/gradle.properties`
+- `android/gradle/wrapper/gradle-wrapper.properties` — Gradle 8.4
+
+**Cloud Functions (functions/)**
+- `src/index.ts` — three Cloud Functions:
+  - `registerForEvent` — Firestore transaction: capacity check, UUID token generation, registeredCount increment, confirmation email via nodemailer (skips gracefully if not configured)
+  - `checkInByQrToken` — role-verified, idempotent, rejects wrong-event tokens
+  - `checkInByRegistrationId` — manual check-in path
+- `package.json`, `tsconfig.json`
+
+**Firebase config**
+- `firestore.rules` — blocks all direct client registration writes; role-locked event creation; students cannot self-elevate role
+- `firestore.indexes.json` — composite indexes for registration queries
+- `firebase.json`, `.firebaserc`
+
+**Project files**
+- `README.md` — setup steps, role assignment, APK build path, email config, known limitations
+- `.gitignore`
+
+### Affected files
+All files under `dalo/`, `functions/`, `firestore.rules`, `firestore.indexes.json`, `firebase.json`, `.firebaserc`, `.gitignore`, `README.md`, `docs/CHANGELOG.md`
+
+### Verification
+- Flutter not yet installed; code written and reviewed for correctness.
+- Build not run. To build: install Flutter, run `flutterfire configure`, then `flutter build apk --debug` in `dalo/`.
+- APK will be at `dalo/build/app/outputs/flutter-apk/app-debug.apk`.
+- Cloud Functions: deploy requires Firebase Blaze plan; `functions/src/index.ts` reviewed for logic correctness.
+- Email confirmation: pending mail provider configuration (`firebase functions:config:set mail.*`); documented as not verified.
+- Role assignment: documented manual admin step in README (Firestore console edit).
+
+## 2026-10-15 — Audit fixes and build-readiness review
+
+- Fixed the Flutter Cloud Functions dependency/import name (`firebase_functions` was invalid; the package is `cloud_functions`) and removed unused client UUID code.
+- Made event registration idempotent and capacity-safe in a single Firestore transaction; derive registration identity from the verified Firebase account instead of trusting client-supplied name/email, and require a student role plus verified email.
+- Made QR and manual attendance check-in transactional to prevent two concurrent requests from both succeeding.
+- Changed registration emails to include an actual attached QR image, escaped user/event text in the HTML, and awaited the delivery attempt while keeping registration successful if mail delivery fails.
+- Restricted organizer event updates from changing ownership or registration counts and prevented reducing capacity below existing registrations. Removed an Android manifest reference to an absent launcher icon resource.
+- Enforced email verification at sign-in and sign out newly registered accounts until they verify.
+- Files: `dalo/pubspec.yaml`, `dalo/lib/services/auth_service.dart`, `dalo/lib/services/registration_service.dart`, `dalo/lib/screens/auth/login_screen.dart`, `dalo/lib/screens/student/event_detail_screen.dart`, `dalo/android/app/src/main/AndroidManifest.xml`, `functions/src/index.ts`, `functions/package.json`, `firestore.rules`, `docs/CHANGELOG.md`.
+- Verification: Flutter 3.24.5 is installed at `C:\src\flutter` but not on PATH; `flutter doctor` reports Android licenses unaccepted and JDK 25 selected. Initial dependency resolution exposed the invalid package name; after correcting it, packages resolved. Full analysis/build and Cloud Functions compilation are pending.
+
+## 2026-10-15 — Static analysis and Android build audit
+
+- Removed the remaining Dart analyzer warnings and aligned the Cloud Functions Node runtime with the installed Node 22 runtime.
+- Files: `dalo/lib/screens/facilitator/scanner_screen.dart`, `dalo/lib/screens/student/event_detail_screen.dart`, `dalo/lib/screens/student/qr_ticket_screen.dart`, `dalo/lib/app.dart`, `functions/package.json`, `functions/package-lock.json`, `docs/REVIEW_HANDOFF.md`, `docs/CHANGELOG.md`.
+- Verification: `dart analyze` passes with no issues; `npm run build` passes. Flutter dependency resolution passes. Flutter APK build was attempted after selecting JDK 17 and stopped because `dalo/android/app/google-services.json` is missing; Firebase project configuration is required. `flutter analyze` itself crashed once with a Dart worker-thread error; direct `dart analyze` completed successfully. `flutter doctor` also reports Visual Studio missing, which is irrelevant to Android, and initially reported Android licenses; the Android build accepted the required Android 34 licenses.
+- Environment notes: Flutter's `jdk-dir` was set to the installed JDK 17 for this machine. `npm install` reported 32 dependency advisories (29 moderate, 3 high); run and review `npm audit` before deployment.
+
+## 2026-10-15 — Setup guide and server-side student domain check
+
+- Added a server-side check for the configured institution email domain, updated setup instructions to configure it in both Flutter and Cloud Functions, corrected the PowerShell email configuration example, and aligned the Node.js prerequisite with the Functions runtime.
+- Files: `functions/src/index.ts`, `README.md`, `docs/CHANGELOG.md`.
+- Verification: TypeScript build and full Flutter analyzer rerun pending after this change.
+
+## 2026-10-15 — Verification update
+
+- Corrected the prior verification status: `npm run build` passes after adding the backend domain check, and direct Dart analysis passes with no issues. Flutter package resolution generated `dalo/pubspec.lock`.
+- Files: `dalo/pubspec.lock`, `docs/CHANGELOG.md`.
+- Verification: Android debug APK remains blocked by missing Firebase project configuration (`google-services.json`); no APK was produced. `npm install` reported 32 advisories; details have not yet been triaged.
+
+## 2026-10-15 — Firebase CLI project setup clarification
+
+- Documented selecting the Firebase CLI default project to replace the `.firebaserc` placeholder before deployment.
+- Files: `README.md`, `docs/CHANGELOG.md`.
+- Verification: reviewed setup steps against the current Firebase project configuration flow; no build rerun (documentation only).
+
+## 2026-10-15 — Support both university student email domains
+
+- Updated client signup/sign-in and the trusted registration backend to accept the exact `udd.edu.ph` and `cdd.edu.ph` domains; documented the matching comma-separated Firebase configuration command.
+- Files: `dalo/lib/services/auth_service.dart`, `functions/src/index.ts`, `README.md`, `docs/CHANGELOG.md`.
+- Verification: not checked.
+
+## 2026-10-15 — Switch to zero-budget Spark architecture
+
+- Removed the app's Cloud Functions dependency and replaced registration/check-in calls with Firestore transactions guarded by capacity and role security rules. QR tokens now use 256-bit secure random bytes. Kept the Functions source as unused legacy code, removed it from Firebase deploy configuration, and documented registration QR email as pending under Spark.
+- Updated the project instructions, Antigravity prompt, README, and implementation handoff to prohibit billing/Functions deployment and describe the Spark tradeoffs.
+- Files: `dalo/lib/services/registration_service.dart`, `dalo/lib/services/auth_service.dart`, `dalo/pubspec.yaml`, `dalo/pubspec.lock`, `firestore.rules`, `firebase.json`, `AGENTS.md`, `ANTIGRAVITY_PROMPT.md`, `README.md`, `docs/REVIEW_HANDOFF.md`, `docs/CHANGELOG.md`.
+- Verification: `flutter pub get` completed successfully and `dart format` completed for the changed Dart services. Dart analysis, Firestore Rules validation/deployment, and APK build not checked.
+
+## 2026-10-15 — Spark migration build follow-up
+
+- Updated the signup screen to display both approved domains. Raised Android min SDK to 23 for Firebase Auth and Kotlin Gradle plugin to 2.1.0 for Firebase dependency metadata. Ignored the local Firestore emulator log and refreshed the handoff status.
+- Files: `dalo/lib/screens/auth/register_screen.dart`, `dalo/android/app/build.gradle`, `dalo/android/build.gradle`, `.gitignore`, `docs/REVIEW_HANDOFF.md`, `docs/CHANGELOG.md`.
+- Verification: Flutter dependency resolution succeeded; Dart analysis reported no issues; the Firestore emulator loaded the rules without syntax errors; `flutter build apk --debug` succeeded at `dalo/build/app/outputs/flutter-apk/app-debug.apk`. No device smoke test or automated transaction tests were run, and rules were not deployed to the user's Firebase project.
+
+## 2026-10-15 — Verify second-account event registration
+
+- Fixed Firestore read access for a student's deterministic registration document when it does not exist yet. The existing account check and first transaction read need permission before the ticket is created; access is granted only when the document ID ends in that caller's UID.
+- Files: `firestore.rules`, `docs/CHANGELOG.md`, `docs/REVIEW_HANDOFF.md`.
+- Verification: Firestore emulator rules-unit check passed for a second verified institutional account reading its absent registration, atomically creating a registration, and incrementing event count below capacity. This used a temporary test harness outside the repository. Live Firebase rules deployment and physical-device sign-up/registration are still pending.
+
+## 2026-10-15 — Keep event management count live
+
+- Changed the owner management screen to listen to the event document so attendee count and Open/Full status refresh immediately after another account registers. Updated registration service comments to reflect that all verified account roles can join events.
+- Files: `dalo/lib/screens/organizer/event_attendees_screen.dart`, `dalo/lib/services/registration_service.dart`, `docs/CHANGELOG.md`.
+- Verification: `dart analyze` passed with no issues; `flutter build apk --debug` succeeded. Physical-device rendering and live count refresh not checked.
