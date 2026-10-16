@@ -199,3 +199,9 @@ All files under `dalo/`, `functions/`, `firestore.rules`, `firestore.indexes.jso
 - Files: `.gitignore`, `docs/CHANGELOG.md`.
 - Verification: `git check-ignore` confirmed both `Dalo-markdown1.txt` and the present `Dalo-markdown1.txt.txt` are ignored.
 
+
+## 2026-10-17 — Public README and developer setup guide
+
+- Reworked the root README as a concise GitHub-facing overview with Daló's features, status, limitations, and pointers to developer documentation. Moved local Firebase setup, testing, build, and security guidance into `docs/DEVELOPMENT.md`; no README is ignored.
+- Files: `README.md`, `docs/DEVELOPMENT.md`, `docs/CHANGELOG.md`.
+- Verification: reviewed the edited Markdown and Git diff; not rendered on GitHub.
