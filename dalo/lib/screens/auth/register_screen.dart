@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../services/auth_service.dart'
     show AuthService, kAllowedEmailDomains;
 import '../../core/widgets/common_widgets.dart';
+import '../../core/widgets/dalo_brand_mark.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -111,6 +112,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const DaloBrandMark(width: 140),
+                const SizedBox(height: 20),
                 Text('Sign up', style: tt.headlineLarge),
                 const SizedBox(height: 6),
                 Text(

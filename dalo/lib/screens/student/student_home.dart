@@ -6,6 +6,7 @@ import '../../models/event.dart';
 import '../../services/auth_service.dart';
 import '../../services/event_service.dart';
 import '../../core/widgets/common_widgets.dart';
+import '../../core/widgets/dalo_brand_mark.dart';
 import 'event_detail_screen.dart';
 import 'my_registrations_screen.dart';
 import '../organizer/create_event_screen.dart';
@@ -34,25 +35,7 @@ class _StudentHomeState extends State<StudentHome> {
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 20,
-        title: Row(
-          children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: DaloPalette.accentSoft,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.local_activity_rounded,
-                size: 19,
-                color: DaloPalette.accent,
-              ),
-            ),
-            const SizedBox(width: 10),
-            const Text('daló'),
-          ],
-        ),
+        title: const DaloBrandMark(width: 98),
         actions: [
           if (widget.appUser.role == UserRole.facilitator)
             IconButton(

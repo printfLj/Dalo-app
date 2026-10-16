@@ -6,6 +6,7 @@ import '../../services/auth_service.dart';
 import '../../screens/auth/login_screen.dart';
 import '../../screens/student/student_home.dart';
 import '../theme/dalo_theme.dart';
+import '../widgets/dalo_brand_mark.dart';
 
 /// Keeps auth state and profile loading separate so a profile read delay or
 /// Firestore error can never silently send a signed-in user back to login.
@@ -107,8 +108,8 @@ class _SplashScreen extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('daló', style: Theme.of(context).textTheme.displayMedium),
-            const SizedBox(height: 20),
+            const DaloBrandMark(width: 220),
+            const SizedBox(height: 24),
             const SizedBox(
               width: 24,
               height: 24,

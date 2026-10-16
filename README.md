@@ -89,19 +89,19 @@ After downloading an app update that changes Firestore permissions, run this com
 
 ---
 
-## Step 5 — Build the debug APK
+## Step 5 — Build the named debug APK
 
 ```powershell
-cd dalo
-flutter pub get
-flutter build apk --debug
+.\scripts\build_apk.ps1
 ```
 
-The APK will be at:
+The script builds the debug APK and copies it to:
 
 ```
-dalo\build\app\outputs\flutter-apk\app-debug.apk
+output\apk\Dalo.apk
 ```
+
+The original Flutter build remains at `dalo\build\app\outputs\flutter-apk\app-debug.apk`.
 
 Install on a connected Android device:
 

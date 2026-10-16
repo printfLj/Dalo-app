@@ -5,6 +5,7 @@ import '../../models/event.dart';
 import '../../services/auth_service.dart';
 import '../../services/event_service.dart';
 import '../../core/widgets/common_widgets.dart';
+import '../../core/widgets/dalo_brand_mark.dart';
 import 'create_event_screen.dart';
 import 'event_attendees_screen.dart';
 
@@ -19,7 +20,14 @@ class OrganizerHome extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Daló — Organizer'),
+        title: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DaloBrandMark(width: 98),
+            SizedBox(width: 10),
+            Text('Organizer'),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),

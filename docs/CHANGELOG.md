@@ -151,3 +151,15 @@ All files under `dalo/`, `functions/`, `firestore.rules`, `firestore.indexes.jso
 - Files: `output/pdf/Dalo_Project_Guide.pdf`, `docs/CHANGELOG.md`.
 - Verification: rendered all six PDF pages to PNG and visually inspected the page layouts; confirmed the PDF contains six A4 pages and extracted text from all pages. App code was not changed.
 
+# 2026-10-16 — Daló logo, Android launch branding, and named APK
+
+- Redrew the supplied wordmark in a bold sans style with a subtle coral accent; added it to the loading and sign-in screens, set Android launcher/adaptive icons and launch-screen branding, and added a PowerShell build script that copies the debug build to `output/apk/Dalo.apk`. Updated README build steps and ignored the local APK output.
+- Files: `dalo/assets/images/dalo_logo.png`, `dalo/lib/core/widgets/dalo_brand_mark.dart`, `dalo/lib/core/auth/auth_gate.dart`, `dalo/lib/screens/auth/login_screen.dart`, `dalo/android/app/src/main/AndroidManifest.xml`, `dalo/android/app/src/main/res/`, `scripts/build_apk.ps1`, `README.md`, `.gitignore`, `docs/CHANGELOG.md`.
+- Verification: `flutter analyze` passed; the build script completed `flutter build apk --debug`; Android `aapt` confirmed the APK package metadata. Output: `output/apk/Dalo.apk`. No phone/emulator visual check was performed.
+
+## 2026-10-16 — Align Daló branding across app screens
+
+- Cropped the transparent wordmark margins so its visible artwork centers correctly; redrew the launcher/splash mark inside Android's adaptive-icon safe area. Removed the unrelated ticket symbol from the login brand panel and applied the wordmark consistently to loading, sign-in, registration, student home, organizer home, and facilitator home.
+- Files: `dalo/assets/images/dalo_logo.png`, `dalo/android/app/src/main/res/drawable-nodpi/`, `dalo/android/app/src/main/res/mipmap-*/`, `dalo/lib/core/widgets/dalo_brand_mark.dart`, `dalo/lib/core/auth/auth_gate.dart`, `dalo/lib/screens/auth/login_screen.dart`, `dalo/lib/screens/auth/register_screen.dart`, `dalo/lib/screens/student/student_home.dart`, `dalo/lib/screens/organizer/organizer_home.dart`, `dalo/lib/screens/facilitator/facilitator_home.dart`, `docs/CHANGELOG.md`.
+- Verification: `flutter analyze` passed and `scripts/build_apk.ps1` rebuilt `output/apk/Dalo.apk` successfully. No physical-device visual check was available.
+

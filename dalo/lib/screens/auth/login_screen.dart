@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../services/auth_service.dart';
 import '../../core/widgets/common_widgets.dart';
+import '../../core/widgets/dalo_brand_mark.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
 
@@ -84,33 +85,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     color: const Color(0xFFFFE9E1),
                     borderRadius: BorderRadius.circular(24),
                   ),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('daló', style: tt.headlineLarge),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Find your people.\nShow up for what matters.',
-                              style: tt.bodyMedium?.copyWith(height: 1.35),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        width: 58,
-                        height: 58,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.75),
-                          borderRadius: BorderRadius.circular(19),
-                        ),
-                        child: const Icon(
-                          Icons.local_activity_outlined,
-                          size: 29,
-                          color: Color(0xFFE86B4A),
-                        ),
+                      const DaloBrandMark(width: 150),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Find your people.\nShow up for what matters.',
+                        style: tt.bodyMedium?.copyWith(height: 1.35),
                       ),
                     ],
                   ),

@@ -5,6 +5,7 @@ import '../../models/event.dart';
 import '../../services/auth_service.dart';
 import '../../services/event_service.dart';
 import '../../core/widgets/common_widgets.dart';
+import '../../core/widgets/dalo_brand_mark.dart';
 import 'scanner_screen.dart';
 import 'manual_checkin_screen.dart';
 
@@ -19,7 +20,14 @@ class FacilitatorHome extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Daló — Facilitator'),
+        title: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DaloBrandMark(width: 98),
+            SizedBox(width: 10),
+            Text('Facilitator'),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
