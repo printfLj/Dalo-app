@@ -163,3 +163,9 @@ All files under `dalo/`, `functions/`, `firestore.rules`, `firestore.indexes.jso
 - Files: `dalo/assets/images/dalo_logo.png`, `dalo/android/app/src/main/res/drawable-nodpi/`, `dalo/android/app/src/main/res/mipmap-*/`, `dalo/lib/core/widgets/dalo_brand_mark.dart`, `dalo/lib/core/auth/auth_gate.dart`, `dalo/lib/screens/auth/login_screen.dart`, `dalo/lib/screens/auth/register_screen.dart`, `dalo/lib/screens/student/student_home.dart`, `dalo/lib/screens/organizer/organizer_home.dart`, `dalo/lib/screens/facilitator/facilitator_home.dart`, `docs/CHANGELOG.md`.
 - Verification: `flutter analyze` passed and `scripts/build_apk.ps1` rebuilt `output/apk/Dalo.apk` successfully. No physical-device visual check was available.
 
+## 2026-10-16 — Keep the local conversation transcript out of Git
+
+- Added a root-level ignore rule for `Dalo-markdown1.txt` and Windows-added extension variants so the private conversation copy is not staged or pushed.
+- Files: `.gitignore`, `docs/CHANGELOG.md`.
+- Verification: `git check-ignore` confirmed both `Dalo-markdown1.txt` and the present `Dalo-markdown1.txt.txt` are ignored.
+

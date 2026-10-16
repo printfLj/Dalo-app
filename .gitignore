@@ -31,3 +31,6 @@ firestore-debug.log
 
 # Locally built distributable APKs
 output/apk/
+
+# Private local copy of the Codex conversation (Windows may show a doubled extension)
+/Dalo-markdown1.txt*
