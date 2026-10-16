@@ -57,10 +57,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   String _friendlyError(String raw) {
     if (raw.contains('email-already-in-use')) {
-      return 'An account with this email already exists.';
+      return 'Registration could not be completed. Check your details and try again.';
     }
     if (raw.contains('weak-password')) {
-      return 'Password is too weak. Use at least 6 characters.';
+      return 'Use at least 8 characters with uppercase, lowercase, and a number.';
     }
     if (raw.contains('allowed')) {
       // Domain restriction message
@@ -137,6 +137,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     if (v == null || v.trim().isEmpty)
                       return 'Enter your name.';
                     if (v.trim().length < 2) return 'Name is too short.';
+                    if (v.trim().length > 40)
+                      return 'Name must be 40 characters or fewer.';
                     return null;
                   },
                 ),
@@ -171,8 +173,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Enter a password.';
-                    if (v.length < 6)
-                      return 'Password must be at least 6 characters.';
+                    if (v.length < 8) return 'Use at least 8 characters.';
+                    if (!RegExp(r'[a-z]').hasMatch(v) ||
+                        !RegExp(r'[A-Z]').hasMatch(v) ||
+                        !RegExp(r'[0-9]').hasMatch(v)) {
+                      return 'Include an uppercase letter, lowercase letter, and number.';
+                    }
                     return null;
                   },
                 ),

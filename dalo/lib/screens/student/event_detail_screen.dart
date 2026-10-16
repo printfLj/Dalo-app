@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 import '../../models/app_user.dart';
@@ -5,6 +7,7 @@ import '../../models/event.dart';
 import '../../models/registration.dart';
 import '../../services/registration_service.dart';
 import '../../core/widgets/common_widgets.dart';
+import '../organizer/event_attendees_screen.dart';
 import 'qr_ticket_screen.dart';
 
 class EventDetailScreen extends StatefulWidget {
@@ -28,6 +31,19 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   Registration? _existingReg;
   bool _checkingExisting = true;
 
+  bool get _isEventAdmin =>
+      widget.appUser.uid == widget.event.organizerUid ||
+      widget.appUser.role == UserRole.facilitator;
+
+  Future<void> _openEventManagement() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EventAttendeesScreen(event: widget.event),
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -49,7 +65,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
   Future<void> _register() async {
     if (_registering) return;
-    setState(() { _registering = true; _error = null; });
+    setState(() {
+      _registering = true;
+      _error = null;
+    });
     try {
       final reg = await _regService.registerForEvent(
         eventId: widget.event.id,
@@ -73,7 +92,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   }
 
   String _friendlyError(String raw) {
-    if (raw.contains('capacity') || raw.contains('resource-exhausted') || raw.contains('full')) {
+    if (raw.contains('capacity') ||
+        raw.contains('resource-exhausted') ||
+        raw.contains('full')) {
       return 'This event is now full. Registration is closed.';
     }
     if (raw.contains('already-exists') || raw.contains('already registered')) {
@@ -97,6 +118,19 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (event.coverImageBase64 != null) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.memory(
+                  base64Decode(event.coverImageBase64!),
+                  height: 210,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
+              ),
+              const SizedBox(height: 18),
+            ],
             Text(event.title, style: tt.headlineLarge),
             const SizedBox(height: 20),
             AppCard(
@@ -123,7 +157,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   _DetailRow(
                     icon: Icons.people_outline,
                     label: 'Capacity',
-                    value: '${event.registeredCount} / ${event.capacity} registered',
+                    value:
+                        '${event.registeredCount} / ${event.capacity} registered',
                   ),
                 ],
               ),
@@ -154,7 +189,13 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               ErrorBanner(message: _error!),
             ],
             const SizedBox(height: 28),
-            if (_checkingExisting)
+            if (_isEventAdmin)
+              _EventManagementPanel(
+                event: event,
+                appUser: widget.appUser,
+                onManage: _openEventManagement,
+              )
+            else if (_checkingExisting)
               const LoadingView(message: 'Checking registration status…')
             else if (_existingReg != null)
               Column(
@@ -169,7 +210,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     ),
                     child: Text(
                       'You are registered for this event.',
-                      style: tt.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                      style:
+                          tt.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -218,12 +260,29 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   String _formatDate(DateTime d) =>
       '${_weekday(d.weekday)}, ${d.day} ${_month(d.month)} ${d.year}';
 
-  String _weekday(int w) =>
-      ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][w - 1];
+  String _weekday(int w) => [
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+        'Sunday'
+      ][w - 1];
 
   String _month(int m) => [
-        'January','February','March','April','May','June',
-        'July','August','September','October','November','December'
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December'
       ][m - 1];
 }
 
@@ -245,15 +304,69 @@ class _DetailRow extends StatelessWidget {
       children: [
         Icon(icon, size: 18, color: const Color(0xFF888888)),
         const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: tt.labelSmall),
-            const SizedBox(height: 2),
-            Text(value, style: tt.bodyMedium),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: tt.labelSmall),
+              const SizedBox(height: 2),
+              Text(value, style: tt.bodyMedium),
+            ],
+          ),
         ),
       ],
+    );
+  }
+}
+
+class _EventManagementPanel extends StatelessWidget {
+  final Event event;
+  final AppUser appUser;
+  final VoidCallback onManage;
+
+  const _EventManagementPanel({
+    required this.event,
+    required this.appUser,
+    required this.onManage,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isOwner = appUser.uid == event.organizerUid;
+    final tt = Theme.of(context).textTheme;
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Event management', style: tt.titleMedium),
+          const SizedBox(height: 6),
+          Text(
+            isOwner
+                ? 'You are hosting this event. Hosts manage the event instead of registering as attendees.'
+                : 'You have facilitator access for this event.',
+            style: tt.bodySmall,
+          ),
+          const SizedBox(height: 16),
+          _DetailRow(
+            icon: Icons.person_outline,
+            label: 'Event host',
+            value:
+                isOwner ? '${event.organizerName} (you)' : event.organizerName,
+          ),
+          const Divider(height: 20),
+          const _DetailRow(
+            icon: Icons.groups_outlined,
+            label: 'Facilitators',
+            value: 'Event-specific facilitator assignments are coming later.',
+          ),
+          const SizedBox(height: 16),
+          SecondaryButton(
+            label: 'Manage attendees',
+            icon: Icons.manage_accounts_outlined,
+            onPressed: onManage,
+          ),
+        ],
+      ),
     );
   }
 }

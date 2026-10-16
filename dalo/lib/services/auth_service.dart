@@ -43,23 +43,28 @@ class AuthService {
       password: password,
     );
 
-    await cred.user!.updateDisplayName(displayName.trim());
-    await cred.user!.sendEmailVerification();
-
-    final appUser = AppUser(
-      uid: cred.user!.uid,
-      email: trimmedEmail,
-      displayName: displayName.trim(),
-      role: UserRole.student, // Public sign-up always creates student
-      createdAt: DateTime.now(),
-    );
-
-    await _db.collection('users').doc(cred.user!.uid).set(appUser.toMap());
-
-    // Keep the new account signed out until its email address is verified.
-    await _auth.signOut();
-
-    return appUser;
+    final firebaseUser = cred.user!;
+    final name = displayName.trim();
+    try {
+      await firebaseUser.updateDisplayName(name);
+      final appUser = AppUser(
+        uid: firebaseUser.uid,
+        email: trimmedEmail,
+        displayName: name,
+        role: UserRole.student, // Public sign-up always creates student
+        createdAt: DateTime.now(),
+      );
+      await _db.collection('users').doc(firebaseUser.uid).set({
+        ...appUser.toMap(),
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      await firebaseUser.sendEmailVerification();
+      return appUser;
+    } finally {
+      // Also sign out after partial failures so an unverified account cannot
+      // remain in an authenticated app session.
+      await _auth.signOut();
+    }
   }
 
   Future<void> signIn({
@@ -80,9 +85,36 @@ class AuthService {
     await signedInUser?.reload();
     final refreshedUser = _auth.currentUser;
     if (refreshedUser?.emailVerified != true) {
-      await refreshedUser?.sendEmailVerification();
-      await _auth.signOut();
+      try {
+        await refreshedUser?.sendEmailVerification();
+      } finally {
+        await _auth.signOut();
+      }
       throw Exception('email-not-verified');
+    }
+
+    // Recover a profile if an earlier sign-up was interrupted after Firebase
+    // Auth created the account but before Firestore saved its user document.
+    final user = _auth.currentUser!;
+    final profileRef = _db.collection('users').doc(user.uid);
+    final profile = await profileRef.get();
+    if (!profile.exists) {
+      final name = (user.displayName ?? '').trim();
+      if (name.length < 2 || name.length > 40) {
+        await _auth.signOut();
+        throw Exception('profile-recovery-required');
+      }
+      final recoveredProfile = AppUser(
+        uid: user.uid,
+        email: trimmedEmail,
+        displayName: name,
+        role: UserRole.student,
+        createdAt: DateTime.now(),
+      );
+      await profileRef.set({
+        ...recoveredProfile.toMap(),
+        'createdAt': FieldValue.serverTimestamp(),
+      });
     }
   }
 

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
 
 import '../../models/app_user.dart';
 import '../../models/event.dart';
 import '../../services/event_service.dart';
 import '../../core/widgets/common_widgets.dart';
+import '../../services/image_upload_service.dart';
 
 class CreateEventScreen extends StatefulWidget {
   final AppUser organizer;
@@ -22,6 +24,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   TimeOfDay? _selectedTime;
   bool _saving = false;
   String? _error;
+  String? _coverImage;
+  final _images = ImageUploadService();
 
   final _eventService = EventService();
 
@@ -70,6 +74,15 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     if (picked != null) setState(() => _selectedTime = picked);
   }
 
+  Future<void> _pickCover() async {
+    try {
+      final image = await _images.pickPhoto(profilePhoto: false);
+      if (image != null && mounted) setState(() => _coverImage = image);
+    } catch (error) {
+      if (mounted) setState(() => _error = error.toString());
+    }
+  }
+
   String _timeString() {
     if (_selectedTime == null) return '';
     final h = _selectedTime!.hourOfPeriod.toString().padLeft(2, '0');
@@ -89,7 +102,10 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       return;
     }
 
-    setState(() { _saving = true; _error = null; });
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
 
     try {
       final event = Event(
@@ -103,6 +119,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         organizerUid: widget.organizer.uid,
         organizerName: widget.organizer.displayName,
         createdAt: DateTime.now(),
+        coverImageBase64: _coverImage,
       );
       await _eventService.createEvent(event);
       if (mounted) {
@@ -132,8 +149,43 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
             children: [
               Text('Create event', style: tt.headlineLarge),
               const SizedBox(height: 28),
+              InkWell(
+                onTap: _saving ? null : _pickCover,
+                borderRadius: BorderRadius.circular(18),
+                child: Container(
+                  height: 170,
+                  width: double.infinity,
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFE9E1),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: _coverImage == null
+                      ? const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.add_photo_alternate_outlined, size: 36),
+                            SizedBox(height: 8),
+                            Text('Add an event cover photo (optional)'),
+                          ],
+                        )
+                      : Image.memory(base64Decode(_coverImage!),
+                          fit: BoxFit.cover),
+                ),
+              ),
+              if (_coverImage != null)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: _saving ? null : _pickCover,
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text('Change cover'),
+                  ),
+                ),
+              const SizedBox(height: 12),
               TextFormField(
                 controller: _titleCtrl,
+                maxLength: 100,
                 textCapitalization: TextCapitalization.words,
                 textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(labelText: 'Event title'),
@@ -189,6 +241,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _locationCtrl,
+                maxLength: 160,
                 textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(labelText: 'Location'),
                 validator: (v) {
@@ -208,6 +261,9 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   if (v == null || v.trim().isEmpty) return 'Enter capacity.';
                   final n = int.tryParse(v.trim());
                   if (n == null || n < 1) return 'Enter a positive number.';
+                  if (n > Event.maximumCapacity) {
+                    return 'Capacity cannot exceed ${Event.maximumCapacity}.';
+                  }
                   return null;
                 },
               ),

@@ -9,8 +9,38 @@ class EventService {
 
   /// Create an event owned by the currently signed-in verified account.
   Future<String> createEvent(Event event) async {
-    final ref = await _events.add(event.toMap());
+    if (event.capacity < 1 || event.capacity > Event.maximumCapacity) {
+      throw ArgumentError(
+          'Event capacity must be between 1 and ${Event.maximumCapacity}.');
+    }
+    final eventData = event.toMap()
+      ..['createdAt'] = FieldValue.serverTimestamp();
+    final ref = await _events.add(eventData);
     return ref.id;
+  }
+
+  /// Permanently remove an event and its registrations. Mark it as deleting
+  /// first so the registration rules reject new joins while cleanup runs.
+  Future<void> deleteEvent(String eventId) async {
+    final eventRef = _events.doc(eventId);
+    await eventRef.update({'deleting': true});
+
+    while (true) {
+      final registrations = await _db
+          .collection('registrations')
+          .where('eventId', isEqualTo: eventId)
+          .limit(400)
+          .get();
+      if (registrations.docs.isEmpty) break;
+
+      final batch = _db.batch();
+      for (final registration in registrations.docs) {
+        batch.delete(registration.reference);
+      }
+      await batch.commit();
+    }
+
+    await eventRef.delete();
   }
 
   /// Stream of all upcoming events, ordered by date.
@@ -19,6 +49,17 @@ class EventService {
         .orderBy('date', descending: false)
         .snapshots()
         .map((snap) => snap.docs.map(Event.fromDoc).toList());
+  }
+
+  Stream<List<Event>> hostedEventsStream(String organizerUid) {
+    return _events
+        .where('organizerUid', isEqualTo: organizerUid)
+        .snapshots()
+        .map((snap) {
+      final events = snap.docs.map(Event.fromDoc).toList();
+      events.sort((a, b) => b.date.compareTo(a.date));
+      return events;
+    });
   }
 
   /// Single event snapshot.

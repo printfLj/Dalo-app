@@ -18,6 +18,7 @@ dalo/lib/firebase_options.dart
 # Functions
 functions/node_modules/
 functions/lib/
+/node_modules/
 
 # Environment / secrets
 .env

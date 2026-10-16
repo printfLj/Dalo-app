@@ -27,12 +27,22 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       await _auth.sendPasswordReset(_emailCtrl.text);
       if (mounted) setState(() => _sent = true);
     } catch (e) {
-      setState(() => _error = 'Could not send reset email. Check the address and try again.');
+      final raw = e.toString();
+      if (raw.contains('user-not-found')) {
+        // Keep account-existence responses indistinguishable.
+        if (mounted) setState(() => _sent = true);
+      } else {
+        setState(() => _error =
+            'Could not send reset email. Check your connection and try again.');
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -80,7 +90,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       autocorrect: false,
                       decoration: const InputDecoration(labelText: 'Email'),
                       validator: (v) {
-                        if (v == null || v.trim().isEmpty) return 'Enter your email.';
+                        if (v == null || v.trim().isEmpty)
+                          return 'Enter your email.';
                         if (!v.contains('@')) return 'Enter a valid email.';
                         return null;
                       },

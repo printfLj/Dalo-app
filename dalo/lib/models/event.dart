@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Event {
+  static const maximumCapacity = 500;
   final String id;
   final String title;
   final DateTime date;
@@ -11,6 +12,7 @@ class Event {
   final String organizerUid;
   final String organizerName;
   final DateTime createdAt;
+  final String? coverImageBase64;
 
   const Event({
     required this.id,
@@ -23,6 +25,7 @@ class Event {
     required this.organizerUid,
     required this.organizerName,
     required this.createdAt,
+    this.coverImageBase64,
   });
 
   bool get isOpen => registeredCount < capacity;
@@ -42,6 +45,7 @@ class Event {
       organizerUid: data['organizerUid'] as String? ?? '',
       organizerName: data['organizerName'] as String? ?? '',
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      coverImageBase64: data['coverImageBase64'] as String?,
     );
   }
 
@@ -55,5 +59,6 @@ class Event {
         'organizerUid': organizerUid,
         'organizerName': organizerName,
         'createdAt': Timestamp.fromDate(createdAt),
+        if (coverImageBase64 != null) 'coverImageBase64': coverImageBase64,
       };
 }

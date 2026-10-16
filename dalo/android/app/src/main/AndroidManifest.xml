@@ -18,6 +18,8 @@
     <application
         android:label="Daló"
         android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:usesCleartextTraffic="false"
         android:name="${applicationName}">
         <activity
             android:name=".MainActivity"

@@ -2,6 +2,36 @@
 
 Append a dated entry for each feature, fix, revision, or project-file change. Include a concise summary, affected files, and verification performed (or “not checked”). Preserve prior entries; add a correction as a new entry.
 
+## 2026-10-16 — Security hardening and emulator rule tests
+
+- Restricted event and registration reads to verified `@udd.edu.ph` / `@cdd.edu.ph` accounts; tightened profile/event data validation and owner-name integrity; made profile/event creation timestamps server-generated; preserved private profiles, student-only public role creation, capacity-safe registration, and one-time owner/facilitator check-in. Improved signup/password-reset error responses and interrupted-signup profile recovery; aligned event form and password limits with rules/console setup; disabled Android app backup and cleartext traffic. Added a repeatable six-case Firestore Emulator rules test command and setup instructions. Documented App Check as deferred until a provider is validated for sideloading. No production rules were deployed.
+- Files: `.gitignore`, `firebase.json`, `firestore.rules`, `package.json`, `package-lock.json`, `security-tests/firestore.rules.test.mjs`, `security-tests/run_firestore_rules_tests.ps1`, `dalo/android/app/src/main/AndroidManifest.xml`, `dalo/lib/services/auth_service.dart`, `dalo/lib/services/event_service.dart`, `dalo/lib/services/profile_service.dart`, `dalo/lib/screens/auth/register_screen.dart`, `dalo/lib/screens/auth/forgot_password_screen.dart`, `dalo/lib/screens/organizer/create_event_screen.dart`, `AGENTS.md`, `ANTIGRAVITY_PROMPT.md`, `README.md`, `docs/REVIEW_HANDOFF.md`, `docs/CHANGELOG.md`, `output/apk/Dalo.apk`.
+- Verification: `npm run test:rules` passed all 6 emulator tests; `flutter analyze` reported no issues; `scripts/build_apk.ps1` built `output/apk/Dalo.apk`. Live Firebase deployment, Authentication console settings, and physical-device security flows remain unchecked.
+
+## 2026-10-16 — Splash wordmark clipping and delete-cancel crash
+
+- Refit the complete Daló wordmark into Android's masked splash-icon safe area so the vertical accent and wordmark stay visible. Moved the deletion confirmation text controller into a dialog-owned state object and unfocus before closing; Cancel/back now lets the dialog dispose its field with the route instead of disposing it while mounted.
+- Files: `dalo/android/app/src/main/res/drawable-nodpi/dalo_splash_icon.png`, `dalo/lib/screens/organizer/event_attendees_screen.dart`, `docs/CHANGELOG.md`, `docs/REVIEW_HANDOFF.md`.
+- Verification: `flutter analyze` found no issues and `scripts/build_apk.ps1` built `output/apk/Dalo.apk`. No Android device was connected for manual launch/cancel flow verification.
+
+## 2026-10-16 — Event admin details, delete dialog layout, and splash logo clarity
+
+- Made the delete confirmation scrollable to prevent overflow while the keyboard is open. Event owners and facilitator-role accounts now see the host/facilitator information and an attendee-management action in place of registration; service and rules also reject their registrations. Re-rendered the Android splash wordmark at higher resolution and used its full safe drawable area.
+- Files: `dalo/lib/screens/organizer/event_attendees_screen.dart`, `dalo/lib/screens/student/event_detail_screen.dart`, `dalo/lib/services/registration_service.dart`, `dalo/android/app/src/main/res/drawable-nodpi/dalo_splash_icon.png`, `firestore.rules`, `AGENTS.md`, `ANTIGRAVITY_PROMPT.md`, `README.md`, `docs/CHANGELOG.md`, `docs/REVIEW_HANDOFF.md`.
+- Verification: `flutter analyze` reported no issues; `scripts/build_apk.ps1` built `output/apk/Dalo.apk`; Firestore Emulator started with the updated rules and exited cleanly. Splash bitmap visually inspected at original resolution. Delete dialog and event-admin UI have not been exercised on a physical device; live Firestore rules still need deployment.
+
+## 2026-10-16 — Owner event deletion and 500-person capacity limit
+
+- Added an owner-only Danger zone requiring the exact event title before permanently deleting an event and its registration/check-in records. Deletion first marks the event as closing, preventing new registrations while attendee records are removed in batches. Enforced capacity 1–500 in the form, event service, and Firestore rules.
+- Files: `dalo/lib/models/event.dart`, `dalo/lib/screens/organizer/create_event_screen.dart`, `dalo/lib/screens/organizer/event_attendees_screen.dart`, `dalo/lib/services/event_service.dart`, `firestore.rules`, `AGENTS.md`, `ANTIGRAVITY_PROMPT.md`, `README.md`, `docs/REVIEW_HANDOFF.md`, `docs/CHANGELOG.md`.
+- Verification: the first APK build caught an unsupported Flutter color API; replaced it with the SDK-compatible API and rebuilt successfully. Updated Firestore rules must still be deployed before the live app can delete events or enforce the new cap. Physical-device flow and rule behavior are not checked.
+
+## 2026-10-16 — Event cover photos and private user profiles
+
+- Added optional compressed event covers on create, event discovery cards, and event details; added a private editable profile with photo, nickname, optional department/year/gender, organizations/positions, and hosted/joined event history. Gender remains open-ended and optional. Restricted user-document reads to their owner and added Firestore validation for profile fields and image size. Kept uploads Spark-compatible by storing compressed Base64 images in Firestore, capped at 280,000 characters; documented the low-volume limitation because Firebase Cloud Storage requires Blaze.
+- Files: `dalo/pubspec.yaml`, `dalo/pubspec.lock`, `dalo/lib/models/app_user.dart`, `dalo/lib/models/event.dart`, `dalo/lib/services/image_upload_service.dart`, `dalo/lib/services/profile_service.dart`, `dalo/lib/services/event_service.dart`, `dalo/lib/core/widgets/profile_avatar.dart`, `dalo/lib/screens/student/profile_screen.dart`, `dalo/lib/screens/student/student_home.dart`, `dalo/lib/screens/student/event_detail_screen.dart`, `dalo/lib/screens/organizer/create_event_screen.dart`, `firestore.rules`, `dalo/android/app/build.gradle`, `AGENTS.md`, `ANTIGRAVITY_PROMPT.md`, `README.md`, `docs/REVIEW_HANDOFF.md`, `docs/CHANGELOG.md`.
+- Verification: `flutter analyze` passed; the debug APK built against Android SDK 35 and was copied to `output/apk/Dalo.apk`; Firestore Emulator started with the updated rules without a compile error. Rule behavior/live deployment and physical-device image/profile flow are not checked.
+
 ## 2026-10-15 — Let users create and manage their own events
 
 - Added a New event action and My events tab to the shared home. All account roles can browse/join events; event creators can view/manage their attendee list and use QR or manual check-in.

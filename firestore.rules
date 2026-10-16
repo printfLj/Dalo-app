@@ -61,6 +61,23 @@ service cloud.firestore {
       return isSignedIn() && regId.matches('^.+_' + request.auth.uid + '$');
     }
 
+    function validEvent(data) {
+      return data.title is string
+        && data.title.size() > 0 && data.title.size() <= 100
+        && data.date is timestamp
+        && data.time is string && data.time.size() > 0 && data.time.size() <= 40
+        && data.location is string && data.location.size() > 0 && data.location.size() <= 160
+        && data.capacity is int && data.capacity >= 1 && data.capacity <= 500
+        && data.registeredCount is int && data.registeredCount >= 0
+        && data.registeredCount <= data.capacity
+        && data.organizerUid is string && data.organizerUid.size() > 0
+        && data.organizerName is string && data.organizerName.size() > 0
+        && data.organizerName.size() <= 40
+        && data.createdAt is timestamp
+        && (!data.keys().hasAny(['coverImageBase64'])
+          || (data.coverImageBase64 is string && data.coverImageBase64.size() <= 280000));
+    }
+
     function isValidEventCountIncrement(eventId) {
       let path = /databases/$(database)/documents/events/$(eventId);
       let regPath = registrationPath(eventId, request.auth.uid);
@@ -72,11 +89,18 @@ service cloud.firestore {
           .hasOnly(['registeredCount'])
         && request.resource.data.registeredCount == resource.data.registeredCount + 1
         && resource.data.registeredCount < resource.data.capacity
+        && resource.data.capacity <= 500
+        && resource.data.organizerUid != request.auth.uid
+        && getUserRole() != 'facilitator'
         && !exists(regPath)
         && existsAfter(regPath)
         && before.registeredCount < before.capacity
+        && before.capacity <= 500
+        && before.organizerUid != request.auth.uid
+        && getUserRole() != 'facilitator'
         && after.registeredCount == before.registeredCount + 1
         && after.capacity == before.capacity
+        && (!before.keys().hasAny(['deleting']) || before.deleting != true)
         && newRegistration.eventId == eventId
         && newRegistration.studentUid == request.auth.uid
         && newRegistration.registeredAt == request.time;
@@ -106,14 +130,18 @@ service cloud.firestore {
         && request.resource.data.status == 'registered'
         && request.resource.data.registeredAt == request.time
         && request.resource.data.checkedInAt == null
+        && (!before.keys().hasAny(['deleting']) || before.deleting != true)
         && before.registeredCount < before.capacity
+        && before.capacity <= 500
+        && before.organizerUid != request.auth.uid
+        && getUserRole() != 'facilitator'
         && after.registeredCount == before.registeredCount + 1
         && after.capacity == before.capacity;
     }
 
     match /users/{uid} {
-      allow read: if isSignedIn()
-        && (request.auth.uid == uid || isOrganizerOrFacilitator());
+      // Profile details (including optional gender) are private to their owner.
+      allow read: if isSignedIn() && request.auth.uid == uid;
 
       // Public registration may create only a student profile for its own
       // institutional account. Email verification is required for app access.
@@ -122,47 +150,86 @@ service cloud.firestore {
         && request.resource.data.role == 'student'
         && request.resource.data.email == request.auth.token.email
         && institutionEmail(request.resource.data.email)
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() >= 2
+        && request.resource.data.displayName.size() <= 40
+        && request.resource.data.createdAt == request.time
         && request.resource.data.keys().hasAll(['email', 'displayName', 'role', 'createdAt'])
-        && request.resource.data.keys().hasOnly(['email', 'displayName', 'role', 'createdAt']);
+        && request.resource.data.keys().hasOnly([
+          'email', 'displayName', 'role', 'createdAt'
+        ]);
 
       allow update: if request.auth.uid == uid
         && request.resource.data.role == resource.data.role
         && request.resource.data.email == resource.data.email
         && request.resource.data.createdAt == resource.data.createdAt
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName']);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'displayName', 'department', 'yearLevel', 'gender', 'organizations',
+          'profileImageBase64'
+        ])
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() >= 2
+        && request.resource.data.displayName.size() <= 40
+        && (!request.resource.data.keys().hasAny(['department'])
+          || (request.resource.data.department is string
+            && request.resource.data.department.size() <= 80))
+        && (!request.resource.data.keys().hasAny(['yearLevel'])
+          || (request.resource.data.yearLevel is string
+            && request.resource.data.yearLevel.size() <= 40))
+        && (!request.resource.data.keys().hasAny(['gender'])
+          || (request.resource.data.gender is string
+            && request.resource.data.gender.size() <= 60))
+        && (!request.resource.data.keys().hasAny(['organizations'])
+          || (request.resource.data.organizations is string
+            && request.resource.data.organizations.size() <= 240))
+        && (!request.resource.data.keys().hasAny(['profileImageBase64'])
+          || (request.resource.data.profileImageBase64 is string
+            && request.resource.data.profileImageBase64.size() <= 280000));
       allow delete: if false;
     }
 
     match /events/{eventId} {
-      allow read: if isSignedIn();
+      allow read: if hasVerifiedInstitutionEmail();
 
       allow create: if hasVerifiedInstitutionEmail()
         && request.resource.data.organizerUid == request.auth.uid
         && request.resource.data.registeredCount == 0
-        && request.resource.data.capacity is int
-        && request.resource.data.capacity > 0
+        && request.resource.data.createdAt == request.time
+        && validEvent(request.resource.data)
+        && request.resource.data.organizerName == get(userPath(request.auth.uid)).data.displayName
         && request.resource.data.keys().hasAll([
           'title', 'date', 'time', 'location', 'capacity', 'registeredCount',
           'organizerUid', 'organizerName', 'createdAt'
         ])
         && request.resource.data.keys().hasOnly([
           'title', 'date', 'time', 'location', 'capacity', 'registeredCount',
-          'organizerUid', 'organizerName', 'createdAt'
-        ]);
+          'organizerUid', 'organizerName', 'createdAt', 'coverImageBase64'
+        ])
+        && (!request.resource.data.keys().hasAny(['coverImageBase64'])
+          || (request.resource.data.coverImageBase64 is string
+            && request.resource.data.coverImageBase64.size() <= 280000));
 
       allow update: if hasVerifiedInstitutionEmail()
         && ((ownsEvent(eventId)
             && request.resource.data.organizerUid == resource.data.organizerUid
+            && request.resource.data.organizerName == resource.data.organizerName
+            && request.resource.data.createdAt == resource.data.createdAt
             && request.resource.data.registeredCount == resource.data.registeredCount
-            && request.resource.data.capacity >= resource.data.registeredCount
+            && validEvent(request.resource.data)
             && request.resource.data.diff(resource.data).affectedKeys()
-              .hasOnly(['title', 'date', 'time', 'location', 'capacity']))
+              .hasOnly(['title', 'date', 'time', 'location', 'capacity', 'coverImageBase64'])
+            )
+          || (ownsEvent(eventId)
+            && request.resource.data.deleting == true
+            && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['deleting']))
           || isValidEventCountIncrement(eventId));
-      allow delete: if false;
+      allow delete: if hasVerifiedInstitutionEmail()
+        && ownsEvent(eventId) && resource.data.deleting == true;
     }
 
     match /registrations/{regId} {
-      allow read: if isSignedIn() && (
+      allow read: if hasVerifiedInstitutionEmail() && (
         isRegistrationIdForCaller(regId)
         || resource.data.studentUid == request.auth.uid
         || canManageEvent(resource.data.eventId)
@@ -183,7 +250,9 @@ service cloud.firestore {
         && request.resource.data.status == 'checkedIn'
         && request.resource.data.checkedInAt == request.time;
 
-      allow delete: if false;
+      allow delete: if hasVerifiedInstitutionEmail()
+        && ownsEvent(resource.data.eventId)
+        && get(/databases/$(database)/documents/events/$(resource.data.eventId)).data.deleting == true;
     }
   }
 }

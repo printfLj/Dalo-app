@@ -20,6 +20,11 @@ class AppUser {
   final String displayName;
   final UserRole role;
   final DateTime createdAt;
+  final String department;
+  final String yearLevel;
+  final String gender;
+  final String organizations;
+  final String? profileImageBase64;
 
   const AppUser({
     required this.uid,
@@ -27,6 +32,11 @@ class AppUser {
     required this.displayName,
     required this.role,
     required this.createdAt,
+    this.department = '',
+    this.yearLevel = '',
+    this.gender = '',
+    this.organizations = '',
+    this.profileImageBase64,
   });
 
   factory AppUser.fromDoc(DocumentSnapshot doc) {
@@ -37,6 +47,11 @@ class AppUser {
       displayName: data['displayName'] as String? ?? '',
       role: userRoleFromString(data['role'] as String?),
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      department: data['department'] as String? ?? '',
+      yearLevel: data['yearLevel'] as String? ?? '',
+      gender: data['gender'] as String? ?? '',
+      organizations: data['organizations'] as String? ?? '',
+      profileImageBase64: data['profileImageBase64'] as String?,
     );
   }
 

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 import '../../core/theme/dalo_theme.dart';
@@ -7,11 +9,13 @@ import '../../services/auth_service.dart';
 import '../../services/event_service.dart';
 import '../../core/widgets/common_widgets.dart';
 import '../../core/widgets/dalo_brand_mark.dart';
+import '../../core/widgets/profile_avatar.dart';
 import 'event_detail_screen.dart';
 import 'my_registrations_screen.dart';
 import '../organizer/create_event_screen.dart';
 import '../organizer/event_attendees_screen.dart';
 import '../facilitator/facilitator_home.dart';
+import 'profile_screen.dart';
 
 class StudentHome extends StatefulWidget {
   final AppUser appUser;
@@ -37,6 +41,19 @@ class _StudentHomeState extends State<StudentHome> {
         titleSpacing: 20,
         title: const DaloBrandMark(width: 98),
         actions: [
+          IconButton(
+            tooltip: 'Your profile',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ProfileScreen(appUser: widget.appUser),
+              ),
+            ),
+            icon: ProfileAvatar(
+              imageBase64: widget.appUser.profileImageBase64,
+              radius: 15,
+            ),
+          ),
           if (widget.appUser.role == UserRole.facilitator)
             IconButton(
               icon: const Icon(Icons.qr_code_scanner_rounded),
@@ -364,7 +381,15 @@ class _EventCard extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    ColoredBox(color: coverColor),
+                    if (event.coverImageBase64 == null)
+                      ColoredBox(color: coverColor)
+                    else
+                      Image.memory(
+                        base64Decode(event.coverImageBase64!),
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) =>
+                            ColoredBox(color: coverColor),
+                      ),
                     Positioned(
                       top: -32,
                       right: 32,

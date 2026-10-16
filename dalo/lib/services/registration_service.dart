@@ -75,6 +75,11 @@ class RegistrationService {
       if (!event.exists) throw StateError('Event not found.');
 
       final data = event.data()!;
+      if (data['organizerUid'] == user.uid ||
+          profileData?['role'] == 'facilitator') {
+        throw StateError(
+            'Event hosts and facilitators manage events instead of registering.');
+      }
       final capacity = (data['capacity'] as num?)?.toInt() ?? 0;
       final registeredCount = (data['registeredCount'] as num?)?.toInt() ?? 0;
       if (capacity <= 0 || registeredCount >= capacity) {
